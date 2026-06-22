@@ -1,0 +1,166 @@
+ <include file="public@header"/>
+<style>
+    textarea {
+        border: 0;
+        outline: none;
+        background-color: rgba(0, 0, 0, 0);
+    }
+
+    input {
+        border: 0;
+        outline: none;
+        background-color: rgba(0, 0, 0, 0);
+    }
+
+    .col-sm-6 {
+        margin-top: 7px;
+    }
+</style>
+
+</head>
+<body>
+<div class="wrap js-check-wrap">
+    <ul class="nav nav-tabs">
+        <li class="active"><a href="{:url('find',['id'=>$id,'pid'=>$pid,'params'=>$params])}">查看</a></li>
+    </ul>
+    <form method="post" class="form-horizontal js-ajax-form margin-top-20 layui-form" autocomplete="off"
+          action="{:url('edit_post',['id'=>$id,'page'=>$page,'pid'=>$pid,'params'=>$params])}">
+
+
+        
+
+
+
+            <!--名称-->            <div class="form-group">
+                <label class="col-sm-2 control-label">名称:</label>
+                <div class="layui-input-block col-sm-6">
+                                                {$name|default=''}                                    </div>
+            </div>
+
+
+
+
+
+
+        
+
+
+
+            <!--微信快递code-->            <div class="form-group">
+                <label class="col-sm-2 control-label">微信快递code:</label>
+                <div class="layui-input-block col-sm-6">
+                                                {$abbr|default=''}                                    </div>
+            </div>
+
+
+
+
+
+
+        
+
+
+
+            <!--快递100code-->            <div class="form-group">
+                <label class="col-sm-2 control-label">快递100code:</label>
+                <div class="layui-input-block col-sm-6">
+                                                {$kd_hundred_code|default=''}                                    </div>
+            </div>
+
+
+
+
+
+
+        
+
+
+
+            <!--快递鸟code-->            <div class="form-group">
+                <label class="col-sm-2 control-label">快递鸟code:</label>
+                <div class="layui-input-block col-sm-6">
+                                                {$kd_bird_code|default=''}                                    </div>
+            </div>
+
+
+
+
+
+
+        
+
+
+
+            <!--2删除-->            <div class="form-group">
+                <label class="col-sm-2 control-label">状态:</label>
+                <div class="layui-input-block col-sm-6">
+                                                {$status_name|default=''}                                    </div>
+            </div>
+
+
+
+
+
+
+        
+
+
+
+            <!--单价-->            <div class="form-group">
+                <label class="col-sm-2 control-label">单价:</label>
+                <div class="layui-input-block col-sm-6">
+                                                <input type="number" class="form-control post-params item-left" name="price"
+                                   value="{$price|default=''}">
+                                        </div>
+            </div>
+
+
+
+
+
+
+        
+
+
+
+            <!--显示:1是,2否-->            <div class="form-group">
+                <label class="col-sm-2 control-label">显示:</label>
+                <div class="layui-input-block col-sm-6">
+                                                {$is_show_name|default=''}                                    </div>
+            </div>
+
+
+
+
+
+
+        
+
+
+
+            <!--排序-->            <div class="form-group">
+                <label class="col-sm-2 control-label">排序:</label>
+                <div class="layui-input-block col-sm-6">
+                                                {$list_order|default=''}                                    </div>
+            </div>
+
+
+
+
+
+
+        
+
+        <!-- 主键id -->
+        <input type="text" name="id" value="{$id}" class="form-control post-params item-left" style="display: none">
+
+
+    </form>
+
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>
+
+
+

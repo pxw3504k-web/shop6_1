@@ -1,0 +1,286 @@
+<include file="public@header"/></head>
+<body>
+<div class="wrap js-check-wrap">
+    <form method="post" id="moods_form" class="form-horizontal js-ajax-form margin-top-20 layui-form" autocomplete="off"
+          action="{:url('weigh_amount_post',['id'=>$id,'page'=>$page,'params'=>$params])}" onsubmit="return false">
+
+
+        <div class="order-details" style="margin-bottom: 150px;">
+            <div class="warp">
+                <table class="table table-hover table-bordered">
+                    <thead>
+                    <tr class="active">
+                        <th class="text-center">商品信息</th>
+                        <th class="text-center">价格</th>
+                        <th class="text-center">单价(kg)</th>
+                        <th class="text-center">数量</th>
+                        <th class="text-center">合计</th>
+                        <th class="text-center">过磅重量</th>
+                        <th class="text-center">过磅金额</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <foreach item="goods" key="key" name="goods_list">
+                        <tr>
+                            <!--					<td class="text-center">{$key+1}</td>-->
+                            <td class="">
+                                <div style="display: flex;">
+                                    <if condition="$goods.goods_id">
+                                        <if condition="$goods.image">
+                                            <div class="img">
+                                                <a href="javascript:imagePreviewDialog('{:cmf_get_image_preview_url($goods.image)}');">
+                                                    <img alt=""
+                                                         class="img-rounded" height="70"
+                                                         src="{:cmf_get_image_preview_url($goods.image)}"
+                                                         width="70">
+                                                </a>
+                                            </div>
+                                        </if>
+                                        <div style="margin-left: 5px;">
+                                            <div class="title">
+                                                {$goods.goods_name}
+                                            </div>
+                                            <if condition="$goods.sku_name">
+                                                <span class="tags">{$goods.sku_name}</span>
+                                            </if>
+                                        </div>
+                                    </if>
+                                </div>
+                            </td>
+
+                            <td class="text-center">&yen; {$goods.goods_price|default='0'}</td>
+                            <td class="text-center">
+                                &yen; {$goods.unit_price|default='0'}
+                                <input type="hidden" id="unit_price_{$goods.id}" class="form-control"
+                                       value="{$goods.unit_price|default='0'}">
+                            </td>
+                            <td class="text-center">{$goods.count|default='1'}</td>
+                            <td class="text-center">&yen; {$goods.total_amount|default='0'}</td>
+                            <td class="">
+                                <input style="width: 200px;" id="weigh_{$goods.id}" type="number"
+                                       name="weigh[{$goods.id}]" class="form-control post-params"
+                                       onchange="setWeighAmount('{$goods.id}')"
+                                       value="{$goods.weigh|default='0'}">
+                            </td>
+                            <td>
+                                <input style="width: 200px;" type="number" id="weigh_amount_{$goods.id}"
+                                       name="weigh_amount[{$goods.id}]" class="form-control post-params"
+                                       readonly value="{$goods.weigh_amount|default='0'}">
+                            </td>
+
+                        </tr>
+                    </foreach>
+                    </tbody>
+                </table>
+
+                <div class="text-right" style="margin-top: 10px;">
+                    <span>退费金额</span>
+                    <b style="margin-left: 5px;" id="refund_amount">&yen; {$refund_amount}</b>
+                </div>
+                <div class="text-right" style="margin-top: 10px;">
+                    <span>应补差价</span>
+                    <b style="margin-left: 5px;" id="repair_amount">&yen; {$repair_amount}</b>
+                    <input class="form-control post-params" type="hidden" name="repair_amount" id="repair_amount_input"
+                           value="{$repair_amount}">
+                </div>
+                <div class="text-right" style="margin-top: 10px;">
+                    <span>运费</span>
+                    <b style="margin-left: 5px;">&yen; {$freight_amount}</b>
+                </div>
+
+                <div class="text-right" style="margin-top: 10px;">
+                    <span>商品总计</span>
+                    <b style="margin-left: 5px;">&yen; {$goods_amount}</b>
+                </div>
+
+                <div class="text-right" style="margin-top: 10px;">
+                    <span>支付金额</span>
+                    <b style="margin-left: 5px;">&yen; {$amount}</b>
+                    <input class="form-control post-params" type="hidden" id="amount_input" value="{$amount}">
+                </div>
+
+                <div class="text-right" style="margin-top: 10px;">
+                    <span>总计</span>
+                    <b style="margin-left: 5px;">&yen; {$total_amount}</b>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!--配送费-->
+        <div class="form-group" style="display: none;">
+            <label class="col-sm-2 control-label">配送费:</label>
+            <div class="layui-input-block col-sm-6">
+                <input type="number" name="freight_amount" class="form-control post-params item-left"
+                       value="{$freight_amount|default=''}">
+            </div>
+        </div>
+
+
+        <!-- 主键id -->
+        <input type="hidden" name="id" value="{$id}" class="form-control post-params item-left">
+
+        <!--当前页码-->
+        <input type="text" name="page" value="{$page}" class="form-control post-params item-left"
+               style="display: none">
+
+        <!--增加提交按钮,防止回车提交表单,隐藏下-->
+        <button type="submit" class="layui-btn js-ajax-submit" style="display: none;">保存</button>
+
+        <div class="col-sm-offset-2 col-sm-10 edit_post_save">
+            <button type="button" class="layui-btn js-ajax-submit" id="save">保存</button>
+        </div>
+
+
+    </form>
+
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>
+
+<script>
+    // 计算单个商品的过磅金额并更新总金额和差价
+    function setWeighAmount(id) {
+        // 获取过磅重量和单价
+        var weigh = document.getElementById('weigh_' + id).value;
+        var unit_price = document.getElementById('unit_price_' + id).value;
+
+        // 计算过磅金额
+        if (weigh) {
+            var weigh_amount = weigh * unit_price;
+            weigh_amount = weigh_amount.toFixed(2); // 保留两位小数
+            document.getElementById('weigh_amount_' + id).value = weigh_amount;
+        } else {
+            document.getElementById('weigh_amount_' + id).value = 0;
+        }
+
+        // 计算总金额、差价和退费金额
+        calculateTotalAndDifference();
+    }
+
+    // 计算总金额、应补差价和退费金额
+    function calculateTotalAndDifference() {
+        var totalAmount = 0;
+        // 获取所有商品的过磅金额输入框
+        var weighAmountInputs = document.querySelectorAll('[id^="weigh_amount_"]');
+
+        // 汇总所有过磅金额（商品实际总金额）
+        weighAmountInputs.forEach(function(input) {
+            var amount = parseFloat(input.value) || 0; // 转为数字，无效值视为0
+            totalAmount += amount;
+        });
+
+        // 获取实际支付金额
+        var actualPayment = parseFloat(document.getElementById('amount_input').value) || 0;
+
+        // 获取运费金额
+        var freightAmount = parseFloat(document.querySelector('input[name="freight_amount"]').value) || 0;
+
+        // 计算总应付金额（商品实际总金额 + 运费）
+        var totalPayable = parseFloat(totalAmount) + parseFloat(freightAmount);
+
+        // 计算应补差价（总应付金额 - 实际支付），只有当总应付 > 实际支付时才显示
+        var difference = 0;
+        if (totalPayable > actualPayment) {
+            difference = totalPayable - actualPayment;
+        }
+        difference = difference.toFixed(2);
+
+        // 计算退费金额（实际支付 - 总应付金额），只有当实际支付 > 总应付时才显示
+        var refundAmount = 0;
+        if (actualPayment > totalPayable) {
+            refundAmount = actualPayment - totalPayable;
+        }
+        refundAmount = refundAmount.toFixed(2);
+
+        // 更新页面显示
+        document.getElementById('repair_amount').innerHTML = '&yen; ' + difference;
+        document.getElementById('repair_amount_input').value = difference;
+        document.getElementById('refund_amount').innerHTML = '&yen; ' + refundAmount;
+    }
+
+    // 页面加载时初始化计算
+    document.addEventListener('DOMContentLoaded', function() {
+        calculateTotalAndDifference();
+    });
+</script>
+
+<script>
+    function preventEnterSubmit(event) {
+        // 检查是否按下了回车键
+        if (event.key === 'Enter') {
+            event.preventDefault(); // 阻止默认行为
+        }
+    }
+
+    // 当文档加载完成后，设置事件监听
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('moods_form');
+        form.addEventListener('keypress', preventEnterSubmit);
+    });
+</script>
+
+<!--弹框体积,父页面自动刷新-->
+<script>
+    // 封装方法，获取到form表单的数据。使用此方法，表单元素必须存在那么属性。
+    //el:元素的class名称。
+    function getParameter(el) {
+        var obj = {};
+        $(el).each(function (index, item) {
+            var name = $(this).attr("name");
+
+            // 处理文本框、密码框、select、tel等输入框
+            if (item.type == "text" || item.type == "password" || item.type == "select-one" || item.type == "tel" ||
+                item.type == "search" || item.type == "range" || item.type == "number" || item.type == "month" ||
+                item.type == "email" || item.type == "datetime-local" || item.type == "datetime" || item.type == "date" ||
+                item.type == "color" || item.type == "hidden") {
+                obj[name] = $(this).val(); // 直接赋值
+            }
+            // 处理复选框
+            else if (item.type == "checkbox") {
+                var checkboxEl = $("input[name='" + name + "']:checked"); // 获取所有选中的复选框
+                if (checkboxEl.length > 0) {
+                    var checkboxArr = [];
+                    checkboxEl.each(function (idx, itm) {
+                        checkboxArr.push($(itm).val()); // 将选中的值放入数组
+                    });
+                    obj[name] = checkboxArr.join(","); // 将选中的值用逗号连接起来
+                }
+            }
+            // 处理单选框
+            else if (item.type == "radio") {
+                var radio_val = $("input[name='" + name + "']:checked").val(); // 获取选中的单选框的值
+                if (radio_val) {
+                    obj[name] = radio_val;
+                }
+            }
+        });
+        return obj;
+    }
+
+    // 调用方法
+    $("#save").click(function () {
+        var parameter = getParameter(".post-params");
+        $.ajax({
+            type: 'POST',
+            url: "{:url('weigh_amount_post')}",
+            data: parameter,
+            dataType: 'json',
+            success: function (data) {
+                layer.msg(data.msg);
+
+                if (data.code == 1) {
+                    let time1 = setInterval(function () {
+                        //父级弹框关闭
+                        parent.layer.closeAll();
+                        //父页面自动刷新
+                        parent.location.reload();
+                    }, 500);
+                }
+
+            }
+        });
+    });
+</script>
