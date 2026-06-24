@@ -385,49 +385,32 @@ class ShopGoodsController extends AdminBaseController
      */
     public function export_excel($where = [], $params = [])
     {
-        $ShopGoodsInit  = new \init\ShopGoodsInit();//商品管理   (ps:InitController)
-        $ShopGoodsModel = new \initmodel\ShopGoodsModel(); //商品管理   (ps:InitModel)
+        $ShopGoodsModel = new \initmodel\ShopGoodsModel();
 
-
-        $result = $ShopGoodsInit->get_list($where, $params);
-
-        $result = $result->toArray();
-        foreach ($result as $k => &$item) {
-
-            //订单号过长问题
-            if ($item["order_num"]) $item["order_num"] = $item["order_num"] . "\t";
-
-            //图片链接 可用默认浏览器打开   后面为展示链接名字 --单独,多图特殊处理一下
-            if ($item["image"]) $item["image"] = '=HYPERLINK("' . cmf_get_asset_url($item['image']) . '","图片.png")';
-
-
-            //用户信息
-            $user_info        = $item['user_info'];
-            $item['userInfo'] = "(ID:{$user_info['id']}) {$user_info['nickname']}  {$user_info['phone']}";
-
-
-            //背景颜色
-            if ($item['unit'] == '测试8') $item['BackgroundColor'] = 'red';
-        }
+        $result = $ShopGoodsModel
+            ->where($where)
+            ->order("id desc")
+            ->select()
+            ->each(function ($item, $key) {
+                if ($item['create_time']) $item['create_time'] = date('Y-m-d H:i:s', $item['create_time']);
+                if ($item['update_time']) $item['update_time'] = date('Y-m-d H:i:s', $item['update_time']);
+                return $item;
+            })
+            ->toArray();
 
         $headArrValue = [
             ["rowName" => "ID", "rowVal" => "id", "width" => 10],
-            ["rowName" => "用户信息", "rowVal" => "userInfo", "width" => 30],
-            ["rowName" => "名字", "rowVal" => "name", "width" => 20],
-            ["rowName" => "年龄", "rowVal" => "age", "width" => 20],
-            ["rowName" => "测试", "rowVal" => "test", "width" => 20],
-            ["rowName" => "创建时间", "rowVal" => "create_time", "width" => 30],
+            ["rowName" => "分类", "rowVal" => "class_name", "width" => 20],
+            ["rowName" => "商品名称", "rowVal" => "goods_name", "width" => 40],
+            ["rowName" => "价格", "rowVal" => "price", "width" => 15],
+            ["rowName" => "库存", "rowVal" => "stock", "width" => 10],
+            ["rowName" => "排序", "rowVal" => "list_order", "width" => 10],
+            ["rowName" => "是否显示", "rowVal" => "is_show", "width" => 10],
+            ["rowName" => "创建时间", "rowVal" => "create_time", "width" => 25],
         ];
 
-
-        //副标题 纵单元格
-        //        $subtitle = [
-        //            ["rowName" => "列1", "acrossCells" => count($headArrValue)/2],
-        //            ["rowName" => "列2", "acrossCells" => count($headArrValue)/2],
-        //        ];
-
         $Excel = new ExcelController();
-        $Excel->excelExports($result, $headArrValue, ["fileName" => "导出"]);
+        $Excel->excelExports($result, $headArrValue, ["fileName" => "商品管理"]);
     }
 
 
@@ -456,7 +439,7 @@ class ShopGoodsController extends AdminBaseController
         $is_attribute = $goods_info['is_attribute']; // 是否是多规格商品
 
         // 需要获取的字段数组
-        $field_arr = ['image', 'price', 'unit_price', 'stock', 'weight'];
+        $field_arr = ['image', 'price', 'unit_price', 'stock'];
 
         // 初始化返回数据
         $result = [

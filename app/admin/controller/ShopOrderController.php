@@ -760,73 +760,89 @@ class ShopOrderController extends AdminBaseController
      */
     public function export_excel($where = [], $params = [])
     {
-        $ShopOrderInit = new \init\ShopOrderInit();//订单管理
+        $ShopOrderModel       = new \initmodel\ShopOrderModel();
+        $ShopOrderDetailInit = new \init\ShopOrderDetailInit();//订单详情
+        $MemberInit          = new \init\MemberInit();
 
-        $result = $ShopOrderInit->get_list($where, $params);
-        $result = $result->toArray();
+        $status_list = [
+            1  => '待付款',
+            2  => '待发货',
+            3  => '已发货',
+            4  => '已完成',
+            10 => '申请退款',
+            14 => '已拒绝退款',
+            15 => '退款中',
+            16 => '已退款',
+            30 => '待装猪',
+            31 => '装猪中',
+            32 => '待过磅',
+            33 => '过磅中',
+            40 => '待补差价',
+            50 => '补差价待支付',
+        ];
 
-        foreach ($result as $k => &$item) {
-            //背景颜色
-            if ($item['unit'] == '测试8') $item['BackgroundColor'] = 'red';
+        $result = $ShopOrderModel
+            ->where($where)
+            ->order("id desc")
+            ->select()
+            ->each(function ($item, $key) use ($MemberInit, $status_list, $ShopOrderDetailInit) {
+                //时间格式化
+                if ($item['create_time']) $item['create_time'] = date('Y-m-d H:i:s', $item['create_time']);
+                if ($item['pay_time']) $item['pay_time'] = date('Y-m-d H:i:s', $item['pay_time']);
 
+                //订单号过长问题
+                if ($item["order_num"]) $item["order_num"] = $item["order_num"] . "\t";
 
-            //订单号过长问题
-            if ($item["order_num"]) $item["order_num"] = $item["order_num"] . "\t";
+                //用户信息
+                $user_info             = $MemberInit->get_find($item['user_id']);
+                $item['userInfo']      = $user_info ? "(ID:{$user_info['id']}) {$user_info['nickname']} {$user_info['phone']}" : '-';
+                $item['pay_type_name'] = $item['pay_type'] == 1 ? '微信支付' : ($item['pay_type'] == 2 ? '余额支付' : '其他');
+                $item['status_name']   = $status_list[$item['status']] ?? '未知状态';
 
-            //图片链接 可用默认浏览器打开   后面为展示链接名字 --单独,多图特殊处理一下
-            if ($item["image"]) $item["image"] = '=HYPERLINK("' . cmf_get_asset_url($item['image']) . '","图片.png")';
+                //商品信息 - 优先从订单表获取，其次查详情表
+                $goodsInfo = '';
+                if (!empty($item['goods_name'])) {
+                    // 订单表已有商品名称
+                    $goodsInfo = "名称:{$item['goods_name']}\n";
+                } else {
+                    // 查询订单详情表
+                    $goods_list = \think\facade\Db::name('shop_order_detail')
+                        ->where('order_num', $item['order_num'])
+                        ->select();
+                    if ($goods_list && count($goods_list) > 0) {
+                        foreach ($goods_list as $goods) {
+                            $goodsInfo .= "名称:{$goods['goods_name']}\n";
+                            if (!empty($goods['sku_name'])) $goodsInfo .= "规格:{$goods['sku_name']}\n";
+                            $goodsInfo .= "数量:{$goods['count']}\n";
+                            $goodsInfo .= "单价:{$goods['goods_price']}\n\n";
+                        }
+                    } else {
+                        $goodsInfo = '商品信息(调试:订单号=' . $item['order_num'] . ',查到0条)';
+                    }
+                }
+                $item['goodsInfo'] = $goodsInfo;
 
-            //商品信息
-            $goodsInfo = '';
-            foreach ($item['goods_list'] as $goods) {
-                $goodsInfo .= "名称:{$goods['goods_name']}\n";
-                if ($goods['sku_name']) $goodsInfo .= "规格:{$goods['sku_name']}\n";
-                $goodsInfo .= "数量:{$goods['count']}\n";
-                $goodsInfo .= "单价:{$goods['goods_price']}\n\n\n";
-            }
-            $item['goodsInfo'] = $goodsInfo;
+                //地址信息
+                $item['addressInfo'] = "{$item['province']}-{$item['city']}-{$item['county']}{$item['address']}";
 
-
-            //地址信息
-            $addressInfo         = "地址:{$item['province']}-{$item['city']}-{$item['county']}{$item['address']}\n";
-            $addressInfo         .= "姓名:{$item['username']}\n";
-            $addressInfo         .= "电话:{$item['phone']}\n";
-            $item['addressInfo'] = $addressInfo;
-
-            //物流信息
-            if ($item['exp_name'] || $item['exp_num']) {
-                $expInfo         = "快递名称:{$item['exp_name']}\n";
-                $expInfo         .= "快递单号:{$item['exp_num']}\n";
-                $item['expInfo'] = $expInfo;
-            }
-
-            //用户信息
-            $user_info        = $item['user_info'];
-            $item['userInfo'] = "(ID:{$user_info['id']}) {$user_info['nickname']}  {$user_info['phone']}";
-        }
+                return $item;
+            })
+            ->toArray();
 
         $headArrValue = [
             ["rowName" => "ID", "rowVal" => "id", "width" => 10],
-            ["rowName" => "用户信息", "rowVal" => "userInfo", "width" => 30],
+            ["rowName" => "用户信息", "rowVal" => "userInfo", "width" => 35],
             ["rowName" => "订单号", "rowVal" => "order_num", "width" => 30],
-            ["rowName" => "状态", "rowVal" => "status_name", "width" => 30],
-            ["rowName" => "支付方式", "rowVal" => "pay_type_name", "width" => 30],
-            ["rowName" => "订单金额", "rowVal" => "total_amount", "width" => 30],
-            ["rowName" => "收货地址", "rowVal" => "addressInfo", "width" => 30],
-            ["rowName" => "商品信息", "rowVal" => "goodsInfo", "width" => 30],
-            ["rowName" => "物流信息", "rowVal" => "expInfo", "width" => 30],
-            ["rowName" => "创建时间", "rowVal" => "create_time", "width" => 30],
+            ["rowName" => "状态", "rowVal" => "status_name", "width" => 15],
+            ["rowName" => "支付方式", "rowVal" => "pay_type_name", "width" => 15],
+            ["rowName" => "订单金额", "rowVal" => "amount", "width" => 15],
+            ["rowName" => "收货地址", "rowVal" => "addressInfo", "width" => 40],
+            ["rowName" => "商品信息", "rowVal" => "goodsInfo", "width" => 40],
+            ["rowName" => "创建时间", "rowVal" => "create_time", "width" => 25],
         ];
 
-
-        //副标题 纵单元格
-        //        $subtitle = [
-        //            ["rowName" => "列1", "acrossCells" => 2],
-        //            ["rowName" => "列2", "acrossCells" => 2],
-        //        ];
-
         $Excel = new ExcelController();
-        $Excel->excelExports($result, $headArrValue, ["fileName" => "导出"]);
+        $Excel->excelExports($result, $headArrValue, ["fileName" => "订单管理"]);
     }
 
 }

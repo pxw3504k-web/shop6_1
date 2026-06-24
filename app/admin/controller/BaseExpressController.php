@@ -365,49 +365,30 @@ class BaseExpressController extends AdminBaseController{
 		*/
 		public function export_excel($where = [], $params = [])
 		{
-			$BaseExpressInit = new \init\BaseExpressInit();//物流管理   (ps:InitController)
-			$BaseExpressModel = new \initmodel\BaseExpressModel(); //物流管理   (ps:InitModel)
+			$BaseExpressModel = new \initmodel\BaseExpressModel();
 
-
-			$result       = $BaseExpressInit->get_list($where, $params);
-
-			$result = $result->toArray();
-			foreach ($result as $k => &$item) {
-
-				//订单号过长问题
-				if ($item["order_num"]) $item["order_num"] = $item["order_num"] . "\t";
-
-				//图片链接 可用默认浏览器打开   后面为展示链接名字 --单独,多图特殊处理一下
-				if ($item["image"]) $item["image"] = '=HYPERLINK("' . cmf_get_asset_url($item['image']) . '","图片.png")';
-
-
-				//用户信息
-				$user_info        = $item['user_info'];
-				$item['userInfo'] = "(ID:{$user_info['id']}) {$user_info['nickname']}  {$user_info['phone']}";
-
-
-				//背景颜色
-				if ($item['unit'] == '测试8') $item['BackgroundColor'] = 'red';
-			}
+			$result = $BaseExpressModel
+				->where($where)
+				->order("id desc")
+				->select()
+				->each(function ($item, $key) {
+					if ($item['create_time']) $item['create_time'] = date('Y-m-d H:i:s', $item['create_time']);
+					if ($item['update_time']) $item['update_time'] = date('Y-m-d H:i:s', $item['update_time']);
+					return $item;
+				})
+				->toArray();
 
 			$headArrValue = [
-			["rowName" => "ID", "rowVal" => "id", "width" => 10],
-			["rowName" => "用户信息", "rowVal" => "userInfo", "width" => 30],
-			["rowName" => "名字", "rowVal" => "name", "width" => 20],
-			["rowName" => "年龄", "rowVal" => "age", "width" => 20],
-			["rowName" => "测试", "rowVal" => "test", "width" => 20],
-			["rowName" => "创建时间", "rowVal" => "create_time", "width" => 30],
+				["rowName" => "ID", "rowVal" => "id", "width" => 10],
+				["rowName" => "名称", "rowVal" => "name", "width" => 30],
+				["rowName" => "单价", "rowVal" => "price", "width" => 15],
+				["rowName" => "排序", "rowVal" => "list_order", "width" => 10],
+				["rowName" => "是否显示", "rowVal" => "is_show", "width" => 10],
+				["rowName" => "创建时间", "rowVal" => "create_time", "width" => 25],
 			];
 
-
-			//副标题 纵单元格
-			//        $subtitle = [
-			//            ["rowName" => "列1", "acrossCells" => count($headArrValue)/2],
-			//            ["rowName" => "列2", "acrossCells" => count($headArrValue)/2],
-			//        ];
-
 			$Excel = new ExcelController();
-			$Excel->excelExports($result, $headArrValue, ["fileName" => "导出"]);
+			$Excel->excelExports($result, $headArrValue, ["fileName" => "物流管理"]);
 		}
 
 
